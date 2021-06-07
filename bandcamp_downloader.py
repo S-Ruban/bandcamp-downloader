@@ -25,6 +25,8 @@ def download():
     open(folder.get()+"\\" +
          driver.title[:driver.title.find('|')-1]+".mp3", 'wb').write(r.content)
     driver.close()
+    url.delete(0, END)
+    url.insert(0, "")
 
 
 gui = Tk(className="Download music from Bandcamp")
