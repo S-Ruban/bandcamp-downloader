@@ -3,6 +3,7 @@ from tkinter import filedialog
 import os
 from selenium import webdriver
 import requests
+from collections import OrderedDict
 
 
 def changedir():
@@ -13,10 +14,10 @@ def changedir():
         curdir.config(text="Current directory : " + os.getcwd())
 
 
-def download():
+def download(link):
     driver = webdriver.Chrome(
         executable_path="chromedriver.exe")
-    driver.get(url.get())
+    driver.get(link)
     playbutton = driver.find_element_by_class_name("playbutton")
     playbutton.click()
     playbutton.click()
@@ -25,25 +26,64 @@ def download():
     open(folder.get()+"\\" +
          driver.title[:driver.title.find('|')-1]+".mp3", 'wb').write(r.content)
     driver.close()
-    url.delete(0, END)
-    url.insert(0, "")
+    songurl.delete(0, END)
+    songurl.insert(0, "")
+
+
+def down():
+    if(download_mode.get()):
+        download(songurl.get())
+    else:
+        driver = webdriver.Chrome(
+            executable_path="chromedriver.exe")
+        driver.get(albumurl.get())
+        els = driver.find_elements_by_xpath('//tr/td/div/a')
+        temp = []
+        for l in els:
+            if(l.get_attribute('href').find('?action=download') == -1 and l.get_attribute('href').find('#lyrics') == -1):
+                temp.append(l.get_attribute('href'))
+        links = list(OrderedDict.fromkeys(temp))
+        driver.close()
+        for l in links:
+            download(l)
+    albumurl.delete(0, END)
+    albumurl.insert(0, "")
+
+
+def song_mode():
+    songurl.config(state='normal')
+    albumurl.config(state='disabled')
+
+
+def album_mode():
+    songurl.config(state='disabled')
+    albumurl.config(state='normal')
 
 
 gui = Tk(className="Download music from Bandcamp")
-gui.geometry("600x125")
+gui.geometry("600x150")
 
 folder = StringVar()
+download_mode = BooleanVar()
 
-Label(gui, text="URL : ").place(x=5, y=20)
-url = Entry(gui, width=85)
-url.place(x=50, y=20)
+onlysong = Radiobutton(gui, text="Song URL : ",
+                       variable=download_mode, value=True, command=song_mode)
+onlysong.place(x=5, y=20)
+songurl = Entry(gui, width=80)
+songurl.place(x=100, y=20)
+
+fullalbum = Radiobutton(gui, text="Album URL : ",
+                        variable=download_mode, value=False, command=album_mode)
+fullalbum.place(x=5, y=50)
+albumurl = Entry(gui, width=80)
+albumurl.place(x=100, y=50)
 
 curdir = Label(gui, text="Current directory : " + os.getcwd())
-curdir.place(x=5, y=50)
+curdir.place(x=5, y=80)
 
 dl = Button(gui, text="Download", width=10, height=1,
-            command=download).place(x=250, y=75)
+            command=down).place(x=250, y=100)
 chdir = Button(gui, text="Change Directory", command=changedir,
-               width=20, height=1).place(x=425, y=50)
+               width=20, height=1).place(x=425, y=75)
 
 gui.mainloop()
